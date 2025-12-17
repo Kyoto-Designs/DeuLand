@@ -1,381 +1,277 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Timer, 
-  BookOpen, 
-  Coffee, 
-  CheckCircle2, 
-  ChevronRight,
-  RotateCcw,
-  Volume2,
-  BrainCircuit,
-  PlayCircle,
-  PauseCircle,
-  Loader2
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treino de Alemão - Imersivo</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <!-- Lucide Icons para ícones profissionais -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; margin: 0; overflow: hidden; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .perspective-1000 { perspective: 1000px; }
+        .lucide-icon { width: 24px; height: 24px; stroke-width: 2.5px; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-const STUDY_FLOW = [
-  {
-    id: 'b1',
-    type: 'study',
-    title: "BLOCO 1 — 25 min",
-    subtitle: "Verbos Essenciais",
-    content: [
-      { de: "sein", pt: "ser/estar", ph: "zain" },
-      { de: "haben", pt: "ter", ph: "raben" },
-      { de: "gehen", pt: "ir", ph: "gue-en" },
-      { de: "kommen", pt: "vir", ph: "kom-en" },
-      { de: "machen", pt: "fazer", ph: "ma-ren" }
-    ],
-    instruction: "Clique no item para ouvir a pronúncia. Repita em voz alta.",
-    motivation: "Concentre-se apenas nisso. Você está fazendo progresso.",
-    time: 1500,
-    color: "from-purple-600 to-indigo-700"
-  },
-  {
-    id: 'p1',
-    type: 'pause',
-    title: "PAUSA — 5 min",
-    subtitle: "Descanso Ativo",
-    content: "Levante. Beba água. Alongue. Nada de celular.",
-    instruction: "Respire fundo e desconecte por um momento.",
-    motivation: "O descanso é parte fundamental do aprendizado.",
-    time: 300, 
-    color: "from-slate-700 to-slate-800"
-  },
-  {
-    id: 'b2',
-    type: 'study',
-    title: "BLOCO 2 — 25 min",
-    subtitle: "Frases Prontas",
-    content: [
-      { de: "Ich bin hier", pt: "Eu estou aqui" },
-      { de: "Ich habe Zeit", pt: "Eu tenho tempo" },
-      { de: "Ich gehe agora", pt: "Eu vou agora" }, 
-      { de: "Ich mache das", pt: "Eu faço isso" }
-    ],
-    instruction: "Alemão → Português → Alemão. Clique para ouvir.",
-    motivation: "Você não precisa ser perfeito. Só continuar.",
-    time: 1500,
-    color: "from-blue-600 to-cyan-700"
-  },
-  {
-    id: 'p2',
-    type: 'pause',
-    title: "PAUSA — 5 min",
-    subtitle: "Relaxamento",
-    content: "Respire fundo. Relaxe o corpo.",
-    time: 300,
-    color: "from-slate-700 to-slate-800"
-  },
-  {
-    id: 'b3',
-    type: 'study',
-    title: "BLOCO 3 — 25 min",
-    subtitle: "Troca Controlada",
-    content: [
-      { de: "Ich gehe agora", pt: "Eu vou agora" },
-      { de: "Ich komme agora", pt: "Eu venho agora" }, 
-      { de: "Ich sehe das", pt: "Eu vejo isso" },
-      { de: "Ich mache das", pt: "Eu faço isso" }
-    ],
-    instruction: "Troque apenas o verbo. Clique para ouvir a pronúncia.",
-    motivation: "Repetição cria memória. Continue firme.",
-    time: 1500,
-    color: "from-emerald-600 to-teal-700"
-  },
-  {
-    id: 'p3',
-    type: 'pause',
-    title: "PAUSA — 5 min",
-    subtitle: "Hidratação",
-    content: "Descanse um pouco. Água.",
-    time: 300,
-    color: "from-slate-700 to-slate-800"
-  },
-  {
-    id: 'b4',
-    type: 'study',
-    title: "BLOCO 4 — 25 min",
-    subtitle: "Falar Sem Ler",
-    content: [
-      { pt: "Eu estou aqui", de: "Ich bin hier" },
-      { pt: "Eu tenho fome", de: "Ich habe Hunger" },
-      { pt: "Eu vou para casa", de: "Ich gehe nach Hause" }
-    ],
-    instruction: "Cubra o alemão. Olhe o português e tente falar. Clique para checar.",
-    motivation: "Você está realmente aprendendo agora!",
-    time: 1500,
-    color: "from-orange-600 to-pink-700"
-  },
-  {
-    id: 'b5',
-    type: 'study',
-    title: "BLOCO 5 — 10 min",
-    subtitle: "Revisão Final",
-    content: "Repita tudo do dia sem aprender nada novo.",
-    instruction: "Só repetir. Sem pressão.",
-    motivation: "Missão quase cumprida!",
-    time: 600,
-    color: "from-rose-600 to-red-700"
-  }
-];
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
 
-export default function App() {
-  const [started, setStarted] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(STUDY_FLOW[0].time);
-  const [isPaused, setIsPaused] = useState(false);
-  const [finished, setFinished] = useState(false);
-  
-  const [playingIndex, setPlayingIndex] = useState(null);
-  const [isAudioLoading, setIsAudioLoading] = useState(false);
-  const [audioStarted, setAudioStarted] = useState(false);
+        // Componente corrigido para renderizar ícones da Lucide via CDN
+        const Icon = ({ name, className = "" }) => {
+            const [iconPaths, setIconPaths] = useState([]);
+            
+            useEffect(() => {
+                // A biblioteca lucide via unpkg expõe os ícones como arrays de formas/caminhos
+                const iconData = window.lucide.icons[name];
+                if (iconData) {
+                    setIconPaths(iconData);
+                }
+            }, [name]);
 
-  const cardRotations = useMemo(() => {
-    return STUDY_FLOW.map((_, i) => (i * 137 % 12) - 6);
-  }, []);
-
-  useEffect(() => {
-    setPlayingIndex(null);
-    setIsAudioLoading(false);
-    setAudioStarted(false);
-    window.speechSynthesis.cancel();
-  }, [currentIndex]);
-
-  const speak = (text, index) => {
-    if (!text) return;
-    
-    if (playingIndex === index) {
-      window.speechSynthesis.cancel();
-      setPlayingIndex(null);
-      setIsAudioLoading(false);
-      setAudioStarted(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    setPlayingIndex(index);
-    setIsAudioLoading(true);
-    setAudioStarted(false);
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'de-DE';
-    utterance.rate = 0.85;
-    
-    utterance.onstart = () => {
-      setIsAudioLoading(false); // Para de mostrar o carregamento
-      setAudioStarted(true); // Começa a mostrar o progresso real
-    };
-
-    utterance.onend = () => {
-      setPlayingIndex(null);
-      setIsAudioLoading(false);
-      setAudioStarted(false);
-    };
-
-    utterance.onerror = () => {
-        setPlayingIndex(null);
-        setIsAudioLoading(false);
-        setAudioStarted(false);
-    };
-    
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const nextCard = useCallback(() => {
-    if (currentIndex < STUDY_FLOW.length - 1) {
-      const nextIdx = currentIndex + 1;
-      setCurrentIndex(nextIdx);
-      setTimeLeft(STUDY_FLOW[nextIdx].time);
-    } else {
-      setFinished(true);
-    }
-  }, [currentIndex]);
-
-  useEffect(() => {
-    if (!started || isPaused || finished) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          nextCard();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [started, isPaused, finished, nextCard]);
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const progress = (timeLeft / STUDY_FLOW[currentIndex].time) * 100;
-
-  if (!started) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl">
-          <div className="w-20 h-20 bg-emerald-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-emerald-500/30">
-            <BrainCircuit className="w-10 h-10 text-emerald-400" />
-          </div>
-          <h1 className="text-5xl font-black text-white mb-6 leading-tight">ESTUDO DE <span className="text-emerald-400">ALEMÃO</span></h1>
-          <p className="text-slate-400 text-xl mb-12">Sessão imersiva com áudio e transições dinâmicas.</p>
-          <button onClick={() => setStarted(true)} className="px-8 py-4 bg-emerald-500 text-slate-950 font-black text-xl rounded-2xl hover:bg-emerald-400 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(16,185,129,0.3)]">COMEÇAR</button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (finished) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-white">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <CheckCircle2 className="w-24 h-24 text-emerald-500 mx-auto mb-6" />
-          <h1 className="text-4xl font-bold mb-4">Sessão Concluída!</h1>
-          <button onClick={() => window.location.reload()} className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 mx-auto transition-all"><RotateCcw className="w-5 h-5" /> Recomeçar</button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-6 flex flex-col items-center overflow-hidden font-sans">
-      <div className="w-full max-w-4xl flex justify-between items-center mb-6 z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center"><Volume2 className="w-4 h-4 text-slate-400" /></div>
-          <div><p className="text-sm font-bold text-slate-300">Bloco {currentIndex + 1}/8</p></div>
-        </div>
-        <button onClick={() => setIsPaused(!isPaused)} className={`px-4 py-1.5 rounded-full font-bold text-xs transition-all border ${isPaused ? 'bg-emerald-500 text-slate-950' : 'bg-white/5 border-white/10'}`}>{isPaused ? 'RETOMAR' : 'PAUSAR'}</button>
-      </div>
-
-      <div className="relative w-full max-w-[440px] h-[580px] perspective-1000">
-        <AnimatePresence mode="popLayout">
-          {STUDY_FLOW.slice(currentIndex).map((card, idx) => {
-            const isTop = idx === 0;
-            const absoluteIndex = currentIndex + idx;
-            const zIndex = isTop ? 100 : (STUDY_FLOW.length - idx);
-            const scale = 1 - (idx * 0.04);
-            const translateY = idx * -12;
-            const rotation = isTop ? 0 : cardRotations[absoluteIndex];
+            if (!iconPaths.length) return <div className={`w-6 h-6 ${className}`} />;
 
             return (
-              <motion.div
-                key={card.id}
-                layout
-                initial={{ opacity: 0, scale: 0.8, y: 100 }}
-                animate={{ opacity: 1, scale, y: translateY, rotate: rotation, zIndex }}
-                exit={{ opacity: 0, scale: 1.2, y: 400, rotate: rotation + 15, zIndex: 200, transition: { duration: 0.5 } }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`absolute inset-0 rounded-[2rem] p-6 flex flex-col justify-between bg-gradient-to-br ${card.color} shadow-2xl border border-white/20 overflow-hidden`}
-              >
-                <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-                
-                <div className="relative z-10 h-full flex flex-col">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="p-2 bg-black/20 rounded-xl">{card.type === 'study' ? <BookOpen className="w-5 h-5" /> : <Coffee className="w-5 h-5" />}</div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">{card.title}</p>
-                      <h2 className="text-lg font-black">{card.subtitle}</h2>
-                    </div>
-                  </div>
-
-                  <div className="flex-grow flex flex-col justify-center gap-2 py-2 overflow-hidden">
-                    {Array.isArray(card.content) ? (
-                      <div className="space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                        {card.content.map((item, i) => {
-                            const isActive = playingIndex === i;
-                            const textToSpeak = item.de || item.pt;
-                            const duration = textToSpeak.length * 0.12 + 0.5;
-
-                            return (
-                            <motion.div 
-                              whileHover={{ scale: 1.03 }}
-                              whileTap={{ scale: 0.98 }}
-                              key={i} 
-                              onClick={() => speak(textToSpeak, i)}
-                              className={`relative mx-2 p-2.5 rounded-xl border cursor-pointer flex justify-between items-center group overflow-hidden transition-colors ${isActive ? 'bg-black/30 border-white/20' : 'bg-black/15 border-white/5'}`}
-                            >
-                              {isActive && (
-                                <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden">
-                                  {/* MOSTRA CARREGAMENTO ENQUANTO PROCESSA */}
-                                  {isAudioLoading && (
-                                    <motion.div 
-                                      className="h-full bg-emerald-400/40"
-                                      initial={{ x: "-100%" }}
-                                      animate={{ x: "100%" }}
-                                      transition={{ repeat: Infinity, duration: 0.7, ease: "linear" }}
-                                    />
-                                  )}
-                                  {/* SUBSTITUI PELA BARRA DE TEMPO QUANDO O ÁUDIO SAI */}
-                                  {audioStarted && (
-                                    <motion.div 
-                                      initial={{ width: 0 }}
-                                      animate={{ width: "100%" }}
-                                      transition={{ duration: duration, ease: "linear" }}
-                                      className="h-full bg-emerald-400"
-                                    />
-                                  )}
-                                </div>
-                              )}
-                              
-                              <div className="flex-grow z-10">
-                                <div className="flex items-baseline gap-2">
-                                  <span className={`text-base font-bold leading-tight transition-colors ${isActive ? 'text-emerald-300' : 'text-white'}`}>{item.de || item.pt}</span>
-                                  <span className="text-[10px] text-white/40 font-medium italic">{item.ph && `(${item.ph})`}</span>
-                                </div>
-                                <p className="text-xs text-white/60 leading-tight">{item.de ? item.pt : item.de}</p>
-                              </div>
-                              <div className="z-10">
-                                {isActive ? (
-                                  isAudioLoading ? (
-                                    <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
-                                  ) : (
-                                    <PauseCircle className="w-5 h-5 text-emerald-400 animate-pulse" />
-                                  )
-                                ) : (
-                                  <PlayCircle className="w-5 h-5 text-white/20 group-hover:text-white transition-colors" />
-                                )}
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center p-4 bg-black/10 rounded-2xl border border-white/5">
-                        <p className="text-lg font-medium leading-relaxed">{card.content}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-[11px] text-white/70 italic mb-4 bg-black/20 p-3 rounded-xl line-clamp-2">"{card.instruction || card.motivation}"</p>
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-grow">
-                        <div className="flex justify-between text-[9px] font-bold uppercase text-white/40 mb-1.5"><span>Tempo</span><span>{formatTime(timeLeft)}</span></div>
-                        <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden">
-                          <motion.div className="h-full bg-white rounded-full" initial={{ width: "100%" }} animate={{ width: `${progress}%` }} transition={{ duration: 1, ease: "linear" }} />
-                        </div>
-                      </div>
-                      {isTop && (
-                        <button onClick={nextCard} className="w-10 h-10 flex items-center justify-center bg-white text-black rounded-lg hover:scale-105 active:scale-95 transition-all shadow-xl"><ChevronRight className="w-5 h-5" /></button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+                <svg
+                    className={`lucide-icon ${className}`}
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    {iconPaths.map((path, index) => {
+                        const [tagName, attributes] = path;
+                        const Tag = tagName;
+                        return <Tag key={index} {...attributes} />;
+                    })}
+                </svg>
             );
-          })}
-        </AnimatePresence>
-      </div>
+        };
 
-      <footer className="mt-auto py-4 text-center z-10"><motion.p key={currentIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-slate-500 text-xs italic">{STUDY_FLOW[currentIndex].motivation || "Respire e continue."}</motion.p></footer>
-      <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }.perspective-1000 { perspective: 1000px; }`}</style>
-    </div>
-  );
-}
+        const STUDY_FLOW = [
+            { id: 'b1', type: 'study', title: "BLOCO 1 — 25 min", subtitle: "Verbos Essenciais", content: [{ de: "sein", pt: "ser/estar", ph: "zain" }, { de: "haben", pt: "ter", ph: "raben" }, { de: "gehen", pt: "ir", ph: "gue-en" }, { de: "kommen", pt: "vir", ph: "kom-en" }, { de: "machen", pt: "fazer", ph: "ma-ren" }], instruction: "Clique no item para ouvir a pronúncia. Repita em voz alta.", motivation: "Concentre-se apenas nisso. Você está fazendo progresso.", time: 1500, color: "from-purple-600 to-indigo-700", icon: "Brain" },
+            { id: 'p1', type: 'pause', title: "PAUSA — 5 min", subtitle: "Descanso Ativo", content: "Levante. Beba água. Alongue. Nada de celular.", instruction: "Respire fundo e desconecte por um momento.", motivation: "O descanso é parte fundamental do aprendizado.", time: 300, color: "from-slate-700 to-slate-800", icon: "Coffee" },
+            { id: 'b2', type: 'study', title: "BLOCO 2 — 25 min", subtitle: "Frases Prontas", content: [{ de: "Ich bin hier", pt: "Eu estou aqui" }, { de: "Ich habe Zeit", pt: "Eu tenho tempo" }, { de: "Ich gehe agora", pt: "Eu vou agora" }, { de: "Ich mache das", pt: "Eu faço isso" }], instruction: "Alemão → Português → Alemão. Clique para ouvir.", motivation: "Você não precisa ser perfeito. Só continuar.", time: 1500, color: "from-blue-600 to-cyan-700", icon: "Languages" },
+            { id: 'p2', type: 'pause', title: "PAUSA — 5 min", subtitle: "Relaxamento", content: "Respire fundo. Relaxe o corpo.", time: 300, color: "from-slate-700 to-slate-800", icon: "Wind" },
+            { id: 'b3', type: 'study', title: "BLOCO 3 — 25 min", subtitle: "Troca Controlada", content: [{ de: "Ich gehe agora", pt: "Eu vou agora" }, { de: "Ich komme agora", pt: "Eu venho agora" }, { de: "Ich sehe das", pt: "Eu vejo isso" }, { de: "Ich mache das", pt: "Eu faço isso" }], instruction: "Troque apenas o verbo. Clique para ouvir a pronúncia.", motivation: "Repetição cria memória. Continue firme.", time: 1500, color: "from-emerald-600 to-teal-700", icon: "Repeat" },
+            { id: 'p3', type: 'pause', title: "PAUSA — 5 min", subtitle: "Hidratação", content: "Descanse um pouco. Água.", time: 300, color: "from-slate-700 to-slate-800", icon: "Droplets" },
+            { id: 'b4', type: 'study', title: "BLOCO 4 — 25 min", subtitle: "Falar Sem Ler", content: [{ pt: "Eu estou aqui", de: "Ich bin hier" }, { pt: "Eu tenho fome", de: "Ich habe Hunger" }, { pt: "Eu vou para casa", de: "Ich gehe nach Hause" }], instruction: "Cubra o alemão. Olhe o português e tente falar. Clique para checar.", motivation: "Você está realmente aprendendo agora!", time: 1500, color: "from-orange-600 to-pink-700", icon: "Mic" },
+            { id: 'b5', type: 'study', title: "BLOCO 5 — 10 min", subtitle: "Revisão Final", content: "Repita tudo do dia sem aprender nada novo.", instruction: "Só repetir. Sem pressão.", motivation: "Missão quase cumprida!", time: 600, color: "from-rose-600 to-red-700", icon: "CheckCircle2" }
+        ];
+
+        function App() {
+            const [started, setStarted] = useState(false);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [timeLeft, setTimeLeft] = useState(STUDY_FLOW[0].time);
+            const [isPaused, setIsPaused] = useState(false);
+            const [finished, setFinished] = useState(false);
+            const [playingIndex, setPlayingIndex] = useState(null);
+            const [isAudioLoading, setIsAudioLoading] = useState(false);
+            const [audioStarted, setAudioStarted] = useState(false);
+
+            const cardRotations = useMemo(() => STUDY_FLOW.map((_, i) => (i * 137 % 12) - 6), []);
+
+            useEffect(() => {
+                setPlayingIndex(null);
+                setIsAudioLoading(false);
+                setAudioStarted(false);
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+            }, [currentIndex]);
+
+            const speak = (text, index) => {
+                if (!text || !window.speechSynthesis) return;
+                if (playingIndex === index) {
+                    window.speechSynthesis.cancel();
+                    setPlayingIndex(null);
+                    setIsAudioLoading(false);
+                    setAudioStarted(false);
+                    return;
+                }
+                window.speechSynthesis.cancel();
+                setPlayingIndex(index);
+                setIsAudioLoading(true);
+                setAudioStarted(false);
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'de-DE';
+                utterance.rate = 0.85;
+                utterance.onstart = () => { setIsAudioLoading(false); setAudioStarted(true); };
+                utterance.onend = () => { setPlayingIndex(null); setIsAudioLoading(false); setAudioStarted(false); };
+                utterance.onerror = () => { setPlayingIndex(null); setIsAudioLoading(false); setAudioStarted(false); };
+                window.speechSynthesis.speak(utterance);
+            };
+
+            const nextCard = useCallback(() => {
+                if (currentIndex < STUDY_FLOW.length - 1) {
+                    const nextIdx = currentIndex + 1;
+                    setCurrentIndex(nextIdx);
+                    setTimeLeft(STUDY_FLOW[nextIdx].time);
+                } else {
+                    setFinished(true);
+                }
+            }, [currentIndex]);
+
+            useEffect(() => {
+                if (!started || isPaused || finished) return;
+                const timer = setInterval(() => {
+                    setTimeLeft((prev) => {
+                        if (prev <= 1) { nextCard(); return 0; }
+                        return prev - 1;
+                    });
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [started, isPaused, finished, nextCard]);
+
+            const formatTime = (seconds) => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `${m}:${s.toString().padStart(2, '0')}`;
+            };
+
+            const progress = (timeLeft / STUDY_FLOW[currentIndex].time) * 100;
+
+            if (!started) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center text-white bg-[#020617]">
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
+                                <Icon name="Zap" className="text-emerald-400 !w-10 !h-10" />
+                            </div>
+                            <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Deutsch <span className="text-emerald-400 block sm:inline">Flow</span></h1>
+                            <p className="text-slate-400 text-lg mb-12 max-w-xs mx-auto">Sua rotina de imersão acelerada com áudio e foco total.</p>
+                            <button onClick={() => setStarted(true)} className="px-10 py-5 bg-emerald-500 text-slate-950 font-black text-xl rounded-2xl hover:bg-emerald-400 transition-all hover:scale-105 shadow-[0_20px_40px_rgba(16,185,129,0.3)] active:scale-95">INICIAR SESSÃO</button>
+                        </motion.div>
+                    </div>
+                );
+            }
+
+            if (finished) {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center text-white">
+                        <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+                            <Icon name="Check" className="text-slate-950 !w-10 !h-10" />
+                        </div>
+                        <h1 className="text-4xl font-black mb-4">MUITO BEM!</h1>
+                        <p className="text-slate-400 mb-10">Você concluiu sua meta de hoje.</p>
+                        <button onClick={() => window.location.reload()} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 mx-auto transition-all font-bold">
+                            <Icon name="RefreshCcw" /> Reiniciar
+                        </button>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen text-white p-4 md:p-8 flex flex-col items-center overflow-hidden bg-[#020617]">
+                    <div className="w-full max-w-md flex justify-between items-center mb-8 z-50">
+                        <div className="flex items-center gap-3 bg-white/5 py-2 px-4 rounded-2xl border border-white/10 backdrop-blur-md">
+                            <Icon name="Layers" className="text-emerald-400" />
+                            <span className="text-sm font-black tracking-widest uppercase">{currentIndex + 1} / {STUDY_FLOW.length}</span>
+                        </div>
+                        <button onClick={() => setIsPaused(!isPaused)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border ${isPaused ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'bg-white/5 border-white/10'}`}>
+                            <Icon name={isPaused ? "Play" : "Pause"} />
+                        </button>
+                    </div>
+
+                    <div className="relative w-full max-w-[420px] h-[560px] perspective-1000">
+                        <AnimatePresence mode="popLayout">
+                            {STUDY_FLOW.slice(currentIndex).map((card, idx) => {
+                                const isTop = idx === 0;
+                                const absoluteIndex = currentIndex + idx;
+                                const zIndex = isTop ? 100 : (STUDY_FLOW.length - idx);
+                                const scale = 1 - (idx * 0.05);
+                                const translateY = idx * -15;
+                                const rotation = isTop ? 0 : cardRotations[absoluteIndex];
+
+                                return (
+                                    <motion.div
+                                        key={card.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.8, y: 100 }}
+                                        animate={{ opacity: 1, scale, y: translateY, rotate: rotation, zIndex }}
+                                        exit={{ opacity: 0, scale: 1.1, y: -400, rotate: 10, transition: { duration: 0.4 } }}
+                                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                                        className={`absolute inset-0 rounded-[2.5rem] p-8 flex flex-col justify-between bg-gradient-to-br ${card.color} shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden`}
+                                    >
+                                        <div className="relative z-10 h-full flex flex-col">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="w-12 h-12 bg-black/20 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-white/10">
+                                                    <Icon name={card.icon} className="text-white" />
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">{card.title}</p>
+                                                    <h2 className="text-xl font-black leading-tight">{card.subtitle}</h2>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-grow flex flex-col justify-center gap-3 py-4 overflow-hidden">
+                                                {Array.isArray(card.content) ? (
+                                                    <div className="space-y-2 overflow-y-auto pr-2 scrollbar-hide">
+                                                        {card.content.map((item, i) => {
+                                                            const isActive = playingIndex === i;
+                                                            return (
+                                                                <motion.div whileHover={{ x: 5 }} whileTap={{ scale: 0.98 }} key={i} onClick={() => speak(item.de || item.pt, i)}
+                                                                    className={`relative p-4 rounded-[1.25rem] border cursor-pointer flex justify-between items-center group transition-all ${isActive ? 'bg-white text-slate-900 border-white shadow-xl' : 'bg-black/10 border-white/5 hover:bg-black/20'}`}
+                                                                >
+                                                                    <div className="flex-grow z-10">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-lg font-black">{item.de || item.pt}</span>
+                                                                            {item.ph && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isActive ? 'bg-slate-900/10' : 'bg-white/10'}`}>{item.ph}</span>}
+                                                                        </div>
+                                                                        <p className={`text-xs font-medium ${isActive ? 'text-slate-600' : 'text-white/60'}`}>{item.de ? item.pt : item.de}</p>
+                                                                    </div>
+                                                                    <div className="z-10">
+                                                                        {isActive ? (isAudioLoading ? <Icon name="Loader2" className="animate-spin" /> : <Icon name="Volume2" />) : <Icon name="PlayCircle" className="opacity-40 group-hover:opacity-100" />}
+                                                                    </div>
+                                                                </motion.div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center p-6 bg-black/10 backdrop-blur-sm rounded-3xl border border-white/5">
+                                                        <p className="text-xl font-bold leading-relaxed">{card.content}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="mt-6">
+                                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5 mb-6">
+                                                    <p className="text-xs text-white/80 leading-relaxed font-medium italic">"{card.instruction || card.motivation}"</p>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex-grow">
+                                                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">
+                                                            <span>Tempo restante</span>
+                                                            <span>{formatTime(timeLeft)}</span>
+                                                        </div>
+                                                        <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden border border-white/5">
+                                                            <motion.div className="h-full bg-white shadow-[0_0_10px_white]" initial={{ width: "100%" }} animate={{ width: `${progress}%` }} transition={{ duration: 1, ease: "linear" }} />
+                                                        </div>
+                                                    </div>
+                                                    {isTop && (
+                                                        <button onClick={nextCard} className="w-14 h-14 flex items-center justify-center bg-white text-slate-900 rounded-2xl hover:scale-110 active:scale-90 shadow-[0_15px_30px_rgba(0,0,0,0.2)] transition-all">
+                                                            <Icon name="ArrowRight" className="!w-6 !h-6" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
