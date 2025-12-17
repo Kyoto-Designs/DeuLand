@@ -3,20 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treino de Alemão - Imersivo</title>
+    <title>Deutsch Flow - Premium Edition</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    <!-- Lucide Icons para ícones profissionais -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #020617; margin: 0; overflow: hidden; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at top left, #2e1065, #020617);
+            margin: 0; 
+            overflow: hidden; 
+        }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .perspective-1000 { perspective: 1000px; }
-        .lucide-icon { width: 24px; height: 24px; stroke-width: 2.5px; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .lucide-icon { width: 20px; height: 20px; stroke-width: 2.5px; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        input:focus { outline: none; }
+        
+        .card-glow {
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(45deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
+            border-radius: inherit;
+            z-index: -1;
+            filter: blur(12px);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
     </style>
 </head>
 <body>
@@ -26,26 +48,69 @@
         const { useState, useEffect, useCallback, useMemo } = React;
         const { motion, AnimatePresence } = window.Motion;
 
-        // Componente corrigido para renderizar ícones da Lucide via CDN
+        // Utilitário para embaralhar arrays
+        const shuffleArray = (array) => {
+            const newArr = [...array];
+            for (let i = newArr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+            }
+            return newArr;
+        };
+
+        // Gestão de Áudio Sintetizado
+        const playSound = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523, now);
+                    osc.frequency.exponentialRampToValueAtTime(1046, now + 0.1);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'ta-da') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + (i * 0.1));
+                        g.gain.setValueAtTime(0.08, now + (i * 0.1));
+                        g.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.1) + 0.6);
+                        o.start(now + (i * 0.1));
+                        o.stop(now + (i * 0.1) + 0.6);
+                    });
+                }
+            } catch (e) { console.warn("Audio Context error"); }
+        };
+
         const Icon = ({ name, className = "" }) => {
             const [iconPaths, setIconPaths] = useState([]);
-            
             useEffect(() => {
-                // A biblioteca lucide via unpkg expõe os ícones como arrays de formas/caminhos
-                const iconData = window.lucide.icons[name];
-                if (iconData) {
-                    setIconPaths(iconData);
-                }
+                const iconData = window.lucide.icons[name] || window.lucide.icons['HelpCircle'];
+                if (iconData) setIconPaths(iconData);
             }, [name]);
-
-            if (!iconPaths.length) return <div className={`w-6 h-6 ${className}`} />;
-
+            if (!iconPaths.length) return <div className={`w-5 h-5 ${className}`} />;
             return (
-                <svg
-                    className={`lucide-icon ${className}`}
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
+                <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     {iconPaths.map((path, index) => {
                         const [tagName, attributes] = path;
                         const Tag = tagName;
@@ -55,212 +120,312 @@
             );
         };
 
-        const STUDY_FLOW = [
-            { id: 'b1', type: 'study', title: "BLOCO 1 — 25 min", subtitle: "Verbos Essenciais", content: [{ de: "sein", pt: "ser/estar", ph: "zain" }, { de: "haben", pt: "ter", ph: "raben" }, { de: "gehen", pt: "ir", ph: "gue-en" }, { de: "kommen", pt: "vir", ph: "kom-en" }, { de: "machen", pt: "fazer", ph: "ma-ren" }], instruction: "Clique no item para ouvir a pronúncia. Repita em voz alta.", motivation: "Concentre-se apenas nisso. Você está fazendo progresso.", time: 1500, color: "from-purple-600 to-indigo-700", icon: "Brain" },
-            { id: 'p1', type: 'pause', title: "PAUSA — 5 min", subtitle: "Descanso Ativo", content: "Levante. Beba água. Alongue. Nada de celular.", instruction: "Respire fundo e desconecte por um momento.", motivation: "O descanso é parte fundamental do aprendizado.", time: 300, color: "from-slate-700 to-slate-800", icon: "Coffee" },
-            { id: 'b2', type: 'study', title: "BLOCO 2 — 25 min", subtitle: "Frases Prontas", content: [{ de: "Ich bin hier", pt: "Eu estou aqui" }, { de: "Ich habe Zeit", pt: "Eu tenho tempo" }, { de: "Ich gehe agora", pt: "Eu vou agora" }, { de: "Ich mache das", pt: "Eu faço isso" }], instruction: "Alemão → Português → Alemão. Clique para ouvir.", motivation: "Você não precisa ser perfeito. Só continuar.", time: 1500, color: "from-blue-600 to-cyan-700", icon: "Languages" },
-            { id: 'p2', type: 'pause', title: "PAUSA — 5 min", subtitle: "Relaxamento", content: "Respire fundo. Relaxe o corpo.", time: 300, color: "from-slate-700 to-slate-800", icon: "Wind" },
-            { id: 'b3', type: 'study', title: "BLOCO 3 — 25 min", subtitle: "Troca Controlada", content: [{ de: "Ich gehe agora", pt: "Eu vou agora" }, { de: "Ich komme agora", pt: "Eu venho agora" }, { de: "Ich sehe das", pt: "Eu vejo isso" }, { de: "Ich mache das", pt: "Eu faço isso" }], instruction: "Troque apenas o verbo. Clique para ouvir a pronúncia.", motivation: "Repetição cria memória. Continue firme.", time: 1500, color: "from-emerald-600 to-teal-700", icon: "Repeat" },
-            { id: 'p3', type: 'pause', title: "PAUSA — 5 min", subtitle: "Hidratação", content: "Descanse um pouco. Água.", time: 300, color: "from-slate-700 to-slate-800", icon: "Droplets" },
-            { id: 'b4', type: 'study', title: "BLOCO 4 — 25 min", subtitle: "Falar Sem Ler", content: [{ pt: "Eu estou aqui", de: "Ich bin hier" }, { pt: "Eu tenho fome", de: "Ich habe Hunger" }, { pt: "Eu vou para casa", de: "Ich gehe nach Hause" }], instruction: "Cubra o alemão. Olhe o português e tente falar. Clique para checar.", motivation: "Você está realmente aprendendo agora!", time: 1500, color: "from-orange-600 to-pink-700", icon: "Mic" },
-            { id: 'b5', type: 'study', title: "BLOCO 5 — 10 min", subtitle: "Revisão Final", content: "Repita tudo do dia sem aprender nada novo.", instruction: "Só repetir. Sem pressão.", motivation: "Missão quase cumprida!", time: 600, color: "from-rose-600 to-red-700", icon: "CheckCircle2" }
+        const isCloseEnough = (str1, str2) => {
+            const s1 = str1.toLowerCase().trim();
+            const s2 = str2.toLowerCase().trim();
+            if (s1 === s2) return true;
+            let edits = 0;
+            const len1 = s1.length, len2 = s2.length;
+            if (Math.abs(len1 - len2) > 2) return false;
+            let i = 0, j = 0;
+            while (i < len1 && j < len2) {
+                if (s1[i] !== s2[j]) {
+                    edits++;
+                    if (len1 > len2) i++;
+                    else if (len2 > len1) j++;
+                    else { i++; j++; }
+                } else { i++; j++; }
+            }
+            edits += (len1 - i) + (len2 - j);
+            return edits <= 2;
+        };
+
+        const RAW_FLOW_DATA = [
+            { id: 'b1', title: "BLOCO 1", subtitle: "Verbos Essenciais", content: [{ de: "sein", pt: "ser/estar", ph: "zain" }, { de: "haben", pt: "ter", ph: "raben" }, { de: "gehen", pt: "ir", ph: "gue-en" }], instruction: "Toca para ouvir.", time: 1500, color: "from-purple-600 to-indigo-950", icon: "Brain" },
+            { id: 'p1', title: "PAUSA 1", subtitle: "Respiro", content: "Bebe água.", instruction: "Relaxa.", time: 300, color: "from-slate-800 to-slate-950", icon: "Coffee" },
+            { id: 'b2', title: "BLOCO 2", subtitle: "Frases Base", content: [{ de: "Ich bin hier", pt: "Eu estou aqui" }, { de: "Ich habe Zeit", pt: "Eu tenho tempo" }], instruction: "Repete em voz alta.", time: 1500, color: "from-blue-600 to-indigo-950", icon: "Languages" },
+            { id: 'p2', title: "PAUSA 2", subtitle: "Descanso", content: "Fecha os olhos.", instruction: "1 minuto.", time: 300, color: "from-slate-800 to-slate-950", icon: "Wind" },
+            { id: 'b3', title: "BLOCO 3", subtitle: "Estruturas", content: [{ de: "Ich mache das", pt: "Eu faço isto" }, { de: "Ich sehe das", pt: "Eu vejo isto" }], instruction: "Observa a ordem.", time: 1500, color: "from-emerald-700 to-slate-900", icon: "Repeat" },
+            { id: 'p3', title: "PAUSA 3", subtitle: "Foco", content: "Alonga-te.", instruction: "Circulação.", time: 300, color: "from-slate-800 to-slate-950", icon: "Zap" },
+            { id: 'b4', title: "BLOCO 4", subtitle: "Prática", content: [{ pt: "Eu venho hoje", de: "Ich komme hoje" }], instruction: "Adivinha o alemão.", time: 1500, color: "from-orange-600 to-slate-900", icon: "Mic" },
+            { id: 'b5', title: "BLOCO 5", subtitle: "Revisão", content: "Reconhecimento rápido.", instruction: "Passa os olhos.", time: 600, color: "from-rose-600 to-pink-950", icon: "CheckCircle2" },
+            { id: 'boss', title: "CHEFÃO", subtitle: "Duelo Final", type: "quiz", content: "BOSS", instruction: "Escreve para atacar!", time: 0, color: "from-red-900 via-red-950 to-black", icon: "Sword" }
         ];
+
+        const BOSS_POOL = [
+            { q: "Como se diz 'ser/estar'?", a: "sein" },
+            { q: "Como se diz 'ter'?", a: "haben" },
+            { q: "Como se diz 'ir'?", a: "gehen" },
+            { q: "Como se diz 'fazer'?", a: "machen" },
+            { q: "Como se diz 'ver'?", a: "sehen" },
+            { q: "Como se diz 'vir'?", a: "kommen" },
+            { q: "Como se diz 'hoje'?", a: "heute" },
+            { q: "Como se diz 'aqui'?", a: "hier" }
+        ];
+
+        const CircularTimer = ({ timeLeft, totalTime }) => {
+            const radius = 24;
+            const circumference = 2 * Math.PI * radius;
+            const progress = totalTime > 0 ? (timeLeft / totalTime) * circumference : 0;
+            return (
+                <div className="relative flex items-center justify-center">
+                    <svg className="w-16 h-16 transform -rotate-90">
+                        <circle cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/10" />
+                        <motion.circle
+                            cx="32" cy="32" r={radius}
+                            stroke="currentColor" strokeWidth="3"
+                            strokeLinecap="round" fill="transparent"
+                            strokeDasharray={circumference}
+                            animate={{ strokeDashoffset: circumference - progress }}
+                            transition={{ duration: 1, ease: "linear" }}
+                            className="text-white"
+                        />
+                    </svg>
+                    <div className="absolute font-black text-[10px] text-white/80">
+                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                    </div>
+                </div>
+            );
+        };
+
+        function BossLevel({ onFinish }) {
+            // Gera um set de perguntas aleatórias do pool
+            const questions = useMemo(() => shuffleArray(BOSS_POOL).slice(0, 4), []);
+            const [step, setStep] = useState(0);
+            const [input, setInput] = useState("");
+            const [feedback, setFeedback] = useState(null);
+
+            const handleCheck = () => {
+                if (isCloseEnough(input, questions[step].a)) {
+                    playSound('success');
+                    setFeedback("correct");
+                    confetti({ particleCount: 20, spread: 40, origin: { y: 0.7 }, colors: ['#10b981'] });
+                    setTimeout(() => {
+                        if (step < questions.length - 1) {
+                            setStep(s => s + 1);
+                            setInput("");
+                            setFeedback(null);
+                        } else { onFinish(); }
+                    }, 800);
+                } else {
+                    setFeedback("wrong");
+                    setTimeout(() => setFeedback(null), 1000);
+                }
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center h-full gap-6">
+                    <div className="text-center">
+                        <p className="text-[10px] uppercase font-black opacity-30 mb-2 tracking-widest">Desafio Final {step + 1}/4</p>
+                        <h3 className="text-2xl font-black text-red-50">{questions[step].q}</h3>
+                    </div>
+                    <input 
+                        value={input} autoFocus
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                        className={`w-full p-5 rounded-2xl bg-black/50 border-2 transition-all text-center text-xl font-bold ${feedback === 'correct' ? 'border-emerald-500 shadow-lg shadow-emerald-500/20' : feedback === 'wrong' ? 'border-red-600 animate-shake' : 'border-white/10 focus:border-white/30'}`}
+                    />
+                    <button onClick={handleCheck} className="w-full py-4 bg-red-600 text-white font-black rounded-xl uppercase tracking-widest active:scale-95 transition-all shadow-xl">Atacar</button>
+                </div>
+            );
+        }
 
         function App() {
             const [started, setStarted] = useState(false);
+            const [studyFlow, setStudyFlow] = useState(RAW_FLOW_DATA);
             const [currentIndex, setCurrentIndex] = useState(0);
-            const [timeLeft, setTimeLeft] = useState(STUDY_FLOW[0].time);
+            const [timeLeft, setTimeLeft] = useState(0);
             const [isPaused, setIsPaused] = useState(false);
             const [finished, setFinished] = useState(false);
             const [playingIndex, setPlayingIndex] = useState(null);
-            const [isAudioLoading, setIsAudioLoading] = useState(false);
-            const [audioStarted, setAudioStarted] = useState(false);
 
-            const cardRotations = useMemo(() => STUDY_FLOW.map((_, i) => (i * 137 % 12) - 6), []);
+            // Embaralha o conteúdo quando o app inicia ou reinicia
+            const initializeFlow = () => {
+                const shuffled = RAW_FLOW_DATA.map(step => {
+                    if (Array.isArray(step.content)) {
+                        return { ...step, content: shuffleArray(step.content) };
+                    }
+                    return step;
+                });
+                setStudyFlow(shuffled);
+                setTimeLeft(shuffled[0].time);
+                setCurrentIndex(0);
+                setStarted(true);
+                playSound('success');
+            };
 
-            useEffect(() => {
-                setPlayingIndex(null);
-                setIsAudioLoading(false);
-                setAudioStarted(false);
-                if (window.speechSynthesis) window.speechSynthesis.cancel();
-            }, [currentIndex]);
-
-            const speak = (text, index) => {
-                if (!text || !window.speechSynthesis) return;
-                if (playingIndex === index) {
-                    window.speechSynthesis.cancel();
-                    setPlayingIndex(null);
-                    setIsAudioLoading(false);
-                    setAudioStarted(false);
-                    return;
-                }
-                window.speechSynthesis.cancel();
-                setPlayingIndex(index);
-                setIsAudioLoading(true);
-                setAudioStarted(false);
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'de-DE';
-                utterance.rate = 0.85;
-                utterance.onstart = () => { setIsAudioLoading(false); setAudioStarted(true); };
-                utterance.onend = () => { setPlayingIndex(null); setIsAudioLoading(false); setAudioStarted(false); };
-                utterance.onerror = () => { setPlayingIndex(null); setIsAudioLoading(false); setAudioStarted(false); };
-                window.speechSynthesis.speak(utterance);
+            const triggerSubtleStars = () => {
+                confetti({
+                    particleCount: 15,
+                    spread: 45,
+                    origin: { y: 0.65 },
+                    shapes: ['star'],
+                    gravity: 1.5,
+                    scalar: 0.7,
+                    colors: ['#ffffff', '#fcd34d']
+                });
             };
 
             const nextCard = useCallback(() => {
-                if (currentIndex < STUDY_FLOW.length - 1) {
+                playSound('click');
+                if (currentIndex < studyFlow.length - 1) {
+                    triggerSubtleStars();
                     const nextIdx = currentIndex + 1;
                     setCurrentIndex(nextIdx);
-                    setTimeLeft(STUDY_FLOW[nextIdx].time);
-                } else {
-                    setFinished(true);
+                    setTimeLeft(studyFlow[nextIdx].time);
+                } else { 
+                    setFinished(true); 
+                    playSound('ta-da');
+                    confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
                 }
-            }, [currentIndex]);
+            }, [currentIndex, studyFlow]);
 
             useEffect(() => {
-                if (!started || isPaused || finished) return;
+                if (!started || isPaused || finished || studyFlow[currentIndex].type === 'quiz') return;
                 const timer = setInterval(() => {
-                    setTimeLeft((prev) => {
+                    setTimeLeft(prev => {
                         if (prev <= 1) { nextCard(); return 0; }
                         return prev - 1;
                     });
                 }, 1000);
                 return () => clearInterval(timer);
-            }, [started, isPaused, finished, nextCard]);
+            }, [started, isPaused, finished, nextCard, currentIndex, studyFlow]);
 
-            const formatTime = (seconds) => {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                return `${m}:${s.toString().padStart(2, '0')}`;
+            const speak = (text, index) => {
+                playSound('click');
+                if (!window.speechSynthesis) return;
+                window.speechSynthesis.cancel();
+                if (playingIndex === index) { setPlayingIndex(null); return; }
+                setPlayingIndex(index);
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'de-DE';
+                utterance.rate = 0.9;
+                utterance.onend = () => setPlayingIndex(null);
+                window.speechSynthesis.speak(utterance);
             };
 
-            const progress = (timeLeft / STUDY_FLOW[currentIndex].time) * 100;
-
-            if (!started) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center text-white bg-[#020617]">
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
-                                <Icon name="Zap" className="text-emerald-400 !w-10 !h-10" />
-                            </div>
-                            <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Deutsch <span className="text-emerald-400 block sm:inline">Flow</span></h1>
-                            <p className="text-slate-400 text-lg mb-12 max-w-xs mx-auto">Sua rotina de imersão acelerada com áudio e foco total.</p>
-                            <button onClick={() => setStarted(true)} className="px-10 py-5 bg-emerald-500 text-slate-950 font-black text-xl rounded-2xl hover:bg-emerald-400 transition-all hover:scale-105 shadow-[0_20px_40px_rgba(16,185,129,0.3)] active:scale-95">INICIAR SESSÃO</button>
+            if (!started) return (
+                <div className="min-h-screen flex items-center justify-center p-6 text-white">
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+                        <motion.div 
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            className="w-20 h-20 bg-purple-500/10 border border-purple-400/20 rounded-[2rem] flex items-center justify-center mx-auto mb-10 shadow-2xl backdrop-blur-xl"
+                        >
+                            <Icon name="Gamepad2" className="w-10 h-10 text-purple-400" />
                         </motion.div>
-                    </div>
-                );
-            }
+                        <h1 className="text-6xl font-[900] tracking-tighter mb-4 leading-none">DEUTSCH<br/><span className="text-purple-400">FLOW</span></h1>
+                        <p className="text-purple-200/40 mb-12 text-sm font-medium tracking-wide">Ordem aleatória + Chefão dinâmico.</p>
+                        <motion.button 
+                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                            onClick={initializeFlow} 
+                            className="w-full py-5 bg-purple-600 text-white font-black text-xl rounded-2xl shadow-xl shadow-purple-600/20 uppercase tracking-widest"
+                        >
+                            INICIAR FLUXO
+                        </motion.button>
+                    </motion.div>
+                </div>
+            );
 
-            if (finished) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center text-white">
-                        <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
-                            <Icon name="Check" className="text-slate-950 !w-10 !h-10" />
-                        </div>
-                        <h1 className="text-4xl font-black mb-4">MUITO BEM!</h1>
-                        <p className="text-slate-400 mb-10">Você concluiu sua meta de hoje.</p>
-                        <button onClick={() => window.location.reload()} className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 mx-auto transition-all font-bold">
-                            <Icon name="RefreshCcw" /> Reiniciar
-                        </button>
-                    </div>
-                );
-            }
+            if (finished) return (
+                <div className="min-h-screen flex flex-col items-center justify-center text-white bg-black/40">
+                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+                        <Icon name="Trophy" className="w-20 h-20 text-yellow-400 mx-auto mb-6" />
+                        <h1 className="text-5xl font-black mb-4 tracking-tighter">VITORIOSO!</h1>
+                        <p className="opacity-40 mb-12 max-w-xs mx-auto">Venceste os verbos e o Chefão aleatório.</p>
+                        <button onClick={() => setStarted(false)} className="px-12 py-5 bg-white text-black font-black rounded-2xl shadow-2xl active:scale-95 transition-all">NOVA RODADA</button>
+                    </motion.div>
+                </div>
+            );
 
             return (
-                <div className="min-h-screen text-white p-4 md:p-8 flex flex-col items-center overflow-hidden bg-[#020617]">
-                    <div className="w-full max-w-md flex justify-between items-center mb-8 z-50">
-                        <div className="flex items-center gap-3 bg-white/5 py-2 px-4 rounded-2xl border border-white/10 backdrop-blur-md">
-                            <Icon name="Layers" className="text-emerald-400" />
-                            <span className="text-sm font-black tracking-widest uppercase">{currentIndex + 1} / {STUDY_FLOW.length}</span>
+                <div className="min-h-screen text-white p-4 flex flex-col items-center justify-center">
+                    <div className="w-full max-w-md flex justify-between items-center mb-12 z-50 px-2">
+                        <div className="bg-white/5 py-2 px-4 rounded-xl border border-white/10 text-[10px] font-black tracking-widest uppercase flex items-center gap-3">
+                           <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(167,139,250,0.8)]"></div>
+                           {currentIndex + 1} / {studyFlow.length}
                         </div>
-                        <button onClick={() => setIsPaused(!isPaused)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border ${isPaused ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'bg-white/5 border-white/10'}`}>
+                        <motion.button 
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => { setIsPaused(!isPaused); playSound('click'); }} 
+                            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${isPaused ? 'bg-purple-600 shadow-lg shadow-purple-600/30' : 'bg-white/5 border border-white/10'}`}
+                        >
                             <Icon name={isPaused ? "Play" : "Pause"} />
-                        </button>
+                        </motion.button>
                     </div>
 
-                    <div className="relative w-full max-w-[420px] h-[560px] perspective-1000">
+                    <div className="relative w-full max-w-[400px] h-[580px] perspective-1000">
                         <AnimatePresence mode="popLayout">
-                            {STUDY_FLOW.slice(currentIndex).map((card, idx) => {
+                            {studyFlow.slice(currentIndex).map((card, idx) => {
                                 const isTop = idx === 0;
-                                const absoluteIndex = currentIndex + idx;
-                                const zIndex = isTop ? 100 : (STUDY_FLOW.length - idx);
-                                const scale = 1 - (idx * 0.05);
-                                const translateY = idx * -15;
-                                const rotation = isTop ? 0 : cardRotations[absoluteIndex];
-
+                                if (idx > 1) return null;
                                 return (
                                     <motion.div
                                         key={card.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.8, y: 100 }}
-                                        animate={{ opacity: 1, scale, y: translateY, rotate: rotation, zIndex }}
-                                        exit={{ opacity: 0, scale: 1.1, y: -400, rotate: 10, transition: { duration: 0.4 } }}
-                                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                                        className={`absolute inset-0 rounded-[2.5rem] p-8 flex flex-col justify-between bg-gradient-to-br ${card.color} shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden`}
+                                        initial={{ opacity: 0, scale: 0.95, y: 40 }}
+                                        animate={{ 
+                                            opacity: 1, 
+                                            scale: 1 - idx * 0.04, 
+                                            y: idx * -25, 
+                                            rotate: isTop ? 0 : 2,
+                                            zIndex: 50 - idx,
+                                        }}
+                                        exit={{ opacity: 0, x: -500, rotate: -20, transition: { duration: 0.5, ease: "anticipate" } }}
+                                        className={`absolute inset-0 rounded-[3.5rem] p-10 bg-gradient-to-br ${card.color} border border-white/5 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col`}
                                     >
-                                        <div className="relative z-10 h-full flex flex-col">
-                                            <div className="flex justify-between items-start mb-6">
-                                                <div className="w-12 h-12 bg-black/20 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-white/10">
-                                                    <Icon name={card.icon} className="text-white" />
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">{card.title}</p>
-                                                    <h2 className="text-xl font-black leading-tight">{card.subtitle}</h2>
-                                                </div>
+                                        <div className="card-glow"></div>
+                                        
+                                        <div className="flex justify-between items-start mb-10">
+                                            <div className="w-14 h-14 bg-black/20 rounded-2xl flex items-center justify-center shadow-inner border border-white/5">
+                                                <Icon name={card.icon} className="!w-6 !h-6" />
                                             </div>
-
-                                            <div className="flex-grow flex flex-col justify-center gap-3 py-4 overflow-hidden">
-                                                {Array.isArray(card.content) ? (
-                                                    <div className="space-y-2 overflow-y-auto pr-2 scrollbar-hide">
-                                                        {card.content.map((item, i) => {
-                                                            const isActive = playingIndex === i;
-                                                            return (
-                                                                <motion.div whileHover={{ x: 5 }} whileTap={{ scale: 0.98 }} key={i} onClick={() => speak(item.de || item.pt, i)}
-                                                                    className={`relative p-4 rounded-[1.25rem] border cursor-pointer flex justify-between items-center group transition-all ${isActive ? 'bg-white text-slate-900 border-white shadow-xl' : 'bg-black/10 border-white/5 hover:bg-black/20'}`}
-                                                                >
-                                                                    <div className="flex-grow z-10">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="text-lg font-black">{item.de || item.pt}</span>
-                                                                            {item.ph && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isActive ? 'bg-slate-900/10' : 'bg-white/10'}`}>{item.ph}</span>}
-                                                                        </div>
-                                                                        <p className={`text-xs font-medium ${isActive ? 'text-slate-600' : 'text-white/60'}`}>{item.de ? item.pt : item.de}</p>
-                                                                    </div>
-                                                                    <div className="z-10">
-                                                                        {isActive ? (isAudioLoading ? <Icon name="Loader2" className="animate-spin" /> : <Icon name="Volume2" />) : <Icon name="PlayCircle" className="opacity-40 group-hover:opacity-100" />}
-                                                                    </div>
-                                                                </motion.div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-center p-6 bg-black/10 backdrop-blur-sm rounded-3xl border border-white/5">
-                                                        <p className="text-xl font-bold leading-relaxed">{card.content}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="mt-6">
-                                                <div className="bg-black/20 p-4 rounded-2xl border border-white/5 mb-6">
-                                                    <p className="text-xs text-white/80 leading-relaxed font-medium italic">"{card.instruction || card.motivation}"</p>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex-grow">
-                                                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">
-                                                            <span>Tempo restante</span>
-                                                            <span>{formatTime(timeLeft)}</span>
-                                                        </div>
-                                                        <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden border border-white/5">
-                                                            <motion.div className="h-full bg-white shadow-[0_0_10px_white]" initial={{ width: "100%" }} animate={{ width: `${progress}%` }} transition={{ duration: 1, ease: "linear" }} />
-                                                        </div>
-                                                    </div>
-                                                    {isTop && (
-                                                        <button onClick={nextCard} className="w-14 h-14 flex items-center justify-center bg-white text-slate-900 rounded-2xl hover:scale-110 active:scale-90 shadow-[0_15px_30px_rgba(0,0,0,0.2)] transition-all">
-                                                            <Icon name="ArrowRight" className="!w-6 !h-6" />
-                                                        </button>
-                                                    )}
-                                                </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mb-1">{card.title}</p>
+                                                <h2 className="text-2xl font-black tracking-tight">{card.subtitle}</h2>
                                             </div>
                                         </div>
+
+                                        <div className="flex-grow flex flex-col justify-center gap-4 overflow-y-auto scrollbar-hide">
+                                            {card.type === 'quiz' ? (
+                                                <BossLevel onFinish={nextCard} />
+                                            ) : Array.isArray(card.content) ? card.content.map((item, i) => (
+                                                <motion.div 
+                                                    key={i} 
+                                                    whileTap={{ scale: 0.97 }}
+                                                    onClick={() => speak(item.de || item.pt, i)} 
+                                                    className={`p-5 rounded-[2rem] border transition-all cursor-pointer flex justify-between items-center ${playingIndex === i ? 'bg-white text-slate-900 shadow-2xl' : 'bg-black/20 border-white/5 hover:bg-black/30'}`}
+                                                >
+                                                    <div>
+                                                        <p className="font-black text-lg leading-none mb-1.5">{item.de || item.pt}</p>
+                                                        <p className="text-xs opacity-50 font-bold">{item.de ? item.pt : item.de}</p>
+                                                    </div>
+                                                    <Icon name={playingIndex === i ? "Volume2" : "PlayCircle"} className={playingIndex === i ? "" : "opacity-10"} />
+                                                </motion.div>
+                                            )) : (
+                                                <div className="text-center p-8 bg-black/20 rounded-[2.5rem] border border-white/5">
+                                                    <p className="font-bold text-lg leading-relaxed opacity-70">{card.content}</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {card.type !== 'quiz' && (
+                                            <div className="mt-10 flex flex-col items-center">
+                                                <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20 mb-8">{card.instruction}</p>
+                                                <div className="flex items-center justify-between w-full">
+                                                    <div className="w-14"></div>
+                                                    <div className="bg-black/30 rounded-full p-1 border border-white/5 shadow-inner">
+                                                        <CircularTimer timeLeft={timeLeft} totalTime={card.time} />
+                                                    </div>
+                                                    <motion.button 
+                                                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                                        onClick={nextCard} 
+                                                        className="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center shadow-xl transition-all"
+                                                    >
+                                                        <Icon name="ChevronRight" className="!w-6 !h-6" />
+                                                    </motion.button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 );
                             })}
