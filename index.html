@@ -1,442 +1,476 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deutsch Flow - Premium Edition</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Glass Calendar Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: radial-gradient(circle at top left, #2e1065, #020617);
-            margin: 0; 
-            overflow: hidden; 
-        }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .perspective-1000 { perspective: 1000px; }
-        .lucide-icon { width: 20px; height: 20px; stroke-width: 2.5px; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-        input:focus { outline: none; }
-        
-        .card-glow {
-            position: absolute;
-            inset: -1px;
-            background: linear-gradient(45deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
-            border-radius: inherit;
-            z-index: -1;
-            filter: blur(12px);
+        :root {
+            --bg-main: #0B0B0B;
+            --orange-glass: rgba(255, 106, 0, 0.5);
+            --orange-solid: #FF6A00;
+            --blur-val: 70px;
+            --spring-easing: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --smooth-easing: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        body {
+            background-color: var(--bg-main);
+            color: rgba(255, 255, 255, 0.85);
+            font-family: -apple-system, system-ui, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            font-size: 12px;
+            user-select: none;
         }
-        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+
+        /* --- ANIMAÇÕES CORE --- */
+        
+        /* Fade-Slide Entrada */
+        .fade-slide-in {
+            animation: fadeSlide 0.2s var(--smooth-easing) forwards;
+        }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pop-In Evento */
+        .pop-in {
+            animation: popIn 0.22s var(--spring-easing) forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        }
+
+        /* Bounce Header */
+        .header-bounce {
+            animation: headerBounce 0.3s var(--spring-easing);
+        }
+        @keyframes headerBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Date Ripple Tap */
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: rippleAnim 0.35s linear;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* --- UI STYLES --- */
+
+        .orange-glass {
+            background: var(--orange-glass);
+            backdrop-filter: blur(var(--blur-val));
+            -webkit-backdrop-filter: blur(var(--blur-val));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s var(--smooth-easing);
+        }
+
+        .glass-header {
+            background: rgba(11, 11, 11, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .calendar-cell {
+            background: var(--bg-main);
+            min-height: 65px;
+            padding: 4px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.16s ease;
+        }
+
+        .calendar-cell:active {
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .today-indicator {
+            background: var(--orange-solid);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 900;
+            box-shadow: 0 0 10px var(--orange-glass);
+            animation: badgePop 0.28s var(--spring-easing);
+        }
+
+        @keyframes badgePop {
+            0% { transform: scale(0) rotate(-20deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        /* Toast / Undo Snack */
+        .toast {
+            position: fixed;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 280px;
+            padding: 10px 16px;
+            border-radius: 20px;
+            z-index: 100;
+            transition: bottom 0.26s var(--smooth-easing);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toast.show { bottom: 30px; }
+
+        /* Agenda Stagger */
+        .agenda-item {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .event-pill {
+            font-size: 8px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            margin-top: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 2px solid var(--orange-solid);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Modal */
+        #modal-overlay {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.24s ease;
+        }
+        #modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        #event-modal {
+            transform: scale(0.9);
+            transition: transform 0.22s var(--spring-easing);
+        }
+        #modal-overlay.active #event-modal { transform: scale(1); }
+
+        /* Seletor de data popover */
+        .mini-cal-pop {
+            transform-origin: top;
+            animation: scaleYIn 0.24s var(--smooth-easing);
+        }
+        @keyframes scaleYIn { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="flex flex-col">
 
-    <script type="text/babel">
-        const { useState, useEffect, useCallback, useMemo } = React;
-        const { motion, AnimatePresence } = window.Motion;
+    <header class="glass-header px-4 py-2 z-40">
+        <div class="flex items-center justify-between mb-2" id="header-nav">
+            <div class="flex items-center gap-3">
+                <button onclick="navigate(-1)" class="text-white/40 active:scale-75 transition-transform"><i class="ph-bold ph-caret-left"></i></button>
+                <h1 id="month-display" class="text-sm font-bold tracking-tight min-w-[100px] text-center">Janeiro 2026</h1>
+                <button onclick="navigate(1)" class="text-white/40 active:scale-75 transition-transform"><i class="ph-bold ph-caret-right"></i></button>
+            </div>
+            <button onclick="goToToday()" class="orange-glass text-[9px] px-3 py-1 rounded-full uppercase font-black">Hoje</button>
+        </div>
+        
+        <div class="flex gap-2 items-center">
+            <div class="relative flex-1">
+                <input type="text" id="quick-input" placeholder="Adicionar rápido..." class="w-full bg-white/5 rounded-xl py-2 px-4 text-[11px] focus:outline-none focus:bg-white/10 transition-all border border-transparent focus:border-orange-500/30">
+            </div>
+            <div class="flex bg-white/5 p-1 rounded-xl">
+                <button onclick="setView('month')" id="v-month" class="px-3 py-1 rounded-lg text-[10px] transition-all">Grid</button>
+                <button onclick="setView('agenda')" id="v-agenda" class="px-3 py-1 rounded-lg text-[10px] transition-all">Lista</button>
+            </div>
+        </div>
+    </header>
 
-        // Utilitário para embaralhar arrays
-        const shuffleArray = (array) => {
-            const newArr = [...array];
-            for (let i = newArr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
-            }
-            return newArr;
-        };
+    <main id="content" class="flex-1 overflow-y-auto relative"></main>
 
-        // Gestão de Áudio Sintetizado
-        const playSound = (type) => {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                const now = ctx.currentTime;
+    <button onclick="openModal()" class="orange-glass fixed bottom-6 right-6 w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl active:scale-90 transition-transform z-30">
+        <i class="ph-bold ph-plus text-xl text-white"></i>
+    </button>
 
-                if (type === 'click') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-                    gain.gain.setValueAtTime(0.05, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    osc.start(now);
-                    osc.stop(now + 0.1);
-                } else if (type === 'success') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523, now);
-                    osc.frequency.exponentialRampToValueAtTime(1046, now + 0.1);
-                    gain.gain.setValueAtTime(0.05, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                    osc.start(now);
-                    osc.stop(now + 0.2);
-                } else if (type === 'ta-da') {
-                    const notes = [523.25, 659.25, 783.99, 1046.50];
-                    notes.forEach((freq, i) => {
-                        const o = ctx.createOscillator();
-                        const g = ctx.createGain();
-                        o.connect(g);
-                        g.connect(ctx.destination);
-                        o.type = 'sine';
-                        o.frequency.setValueAtTime(freq, now + (i * 0.1));
-                        g.gain.setValueAtTime(0.08, now + (i * 0.1));
-                        g.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.1) + 0.6);
-                        o.start(now + (i * 0.1));
-                        o.stop(now + (i * 0.1) + 0.6);
-                    });
-                }
-            } catch (e) { console.warn("Audio Context error"); }
-        };
-
-        const Icon = ({ name, className = "" }) => {
-            const [iconPaths, setIconPaths] = useState([]);
-            useEffect(() => {
-                const iconData = window.lucide.icons[name] || window.lucide.icons['HelpCircle'];
-                if (iconData) setIconPaths(iconData);
-            }, [name]);
-            if (!iconPaths.length) return <div className={`w-5 h-5 ${className}`} />;
-            return (
-                <svg className={`lucide-icon ${className}`} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    {iconPaths.map((path, index) => {
-                        const [tagName, attributes] = path;
-                        const Tag = tagName;
-                        return <Tag key={index} {...attributes} />;
-                    })}
-                </svg>
-            );
-        };
-
-        const isCloseEnough = (str1, str2) => {
-            const s1 = str1.toLowerCase().trim();
-            const s2 = str2.toLowerCase().trim();
-            if (s1 === s2) return true;
-            let edits = 0;
-            const len1 = s1.length, len2 = s2.length;
-            if (Math.abs(len1 - len2) > 2) return false;
-            let i = 0, j = 0;
-            while (i < len1 && j < len2) {
-                if (s1[i] !== s2[j]) {
-                    edits++;
-                    if (len1 > len2) i++;
-                    else if (len2 > len1) j++;
-                    else { i++; j++; }
-                } else { i++; j++; }
-            }
-            edits += (len1 - i) + (len2 - j);
-            return edits <= 2;
-        };
-
-        const RAW_FLOW_DATA = [
-            { id: 'b1', title: "BLOCO 1", subtitle: "Verbos Essenciais", content: [{ de: "sein", pt: "ser/estar", ph: "zain" }, { de: "haben", pt: "ter", ph: "raben" }, { de: "gehen", pt: "ir", ph: "gue-en" }], instruction: "Toca para ouvir.", time: 1500, color: "from-purple-600 to-indigo-950", icon: "Brain" },
-            { id: 'p1', title: "PAUSA 1", subtitle: "Respiro", content: "Bebe água.", instruction: "Relaxa.", time: 300, color: "from-slate-800 to-slate-950", icon: "Coffee" },
-            { id: 'b2', title: "BLOCO 2", subtitle: "Frases Base", content: [{ de: "Ich bin hier", pt: "Eu estou aqui" }, { de: "Ich habe Zeit", pt: "Eu tenho tempo" }], instruction: "Repete em voz alta.", time: 1500, color: "from-blue-600 to-indigo-950", icon: "Languages" },
-            { id: 'p2', title: "PAUSA 2", subtitle: "Descanso", content: "Fecha os olhos.", instruction: "1 minuto.", time: 300, color: "from-slate-800 to-slate-950", icon: "Wind" },
-            { id: 'b3', title: "BLOCO 3", subtitle: "Estruturas", content: [{ de: "Ich mache das", pt: "Eu faço isto" }, { de: "Ich sehe das", pt: "Eu vejo isto" }], instruction: "Observa a ordem.", time: 1500, color: "from-emerald-700 to-slate-900", icon: "Repeat" },
-            { id: 'p3', title: "PAUSA 3", subtitle: "Foco", content: "Alonga-te.", instruction: "Circulação.", time: 300, color: "from-slate-800 to-slate-950", icon: "Zap" },
-            { id: 'b4', title: "BLOCO 4", subtitle: "Prática", content: [{ pt: "Eu venho hoje", de: "Ich komme hoje" }], instruction: "Adivinha o alemão.", time: 1500, color: "from-orange-600 to-slate-900", icon: "Mic" },
-            { id: 'b5', title: "BLOCO 5", subtitle: "Revisão", content: "Reconhecimento rápido.", instruction: "Passa os olhos.", time: 600, color: "from-rose-600 to-pink-950", icon: "CheckCircle2" },
-            { id: 'boss', title: "CHEFÃO", subtitle: "Duelo Final", type: "quiz", content: "BOSS", instruction: "Escreve para atacar!", time: 0, color: "from-red-900 via-red-950 to-black", icon: "Sword" }
-        ];
-
-        const BOSS_POOL = [
-            { q: "Como se diz 'ser/estar'?", a: "sein" },
-            { q: "Como se diz 'ter'?", a: "haben" },
-            { q: "Como se diz 'ir'?", a: "gehen" },
-            { q: "Como se diz 'fazer'?", a: "machen" },
-            { q: "Como se diz 'ver'?", a: "sehen" },
-            { q: "Como se diz 'vir'?", a: "kommen" },
-            { q: "Como se diz 'hoje'?", a: "heute" },
-            { q: "Como se diz 'aqui'?", a: "hier" }
-        ];
-
-        const CircularTimer = ({ timeLeft, totalTime }) => {
-            const radius = 24;
-            const circumference = 2 * Math.PI * radius;
-            const progress = totalTime > 0 ? (timeLeft / totalTime) * circumference : 0;
-            return (
-                <div className="relative flex items-center justify-center">
-                    <svg className="w-16 h-16 transform -rotate-90">
-                        <circle cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/10" />
-                        <motion.circle
-                            cx="32" cy="32" r={radius}
-                            stroke="currentColor" strokeWidth="3"
-                            strokeLinecap="round" fill="transparent"
-                            strokeDasharray={circumference}
-                            animate={{ strokeDashoffset: circumference - progress }}
-                            transition={{ duration: 1, ease: "linear" }}
-                            className="text-white"
-                        />
-                    </svg>
-                    <div className="absolute font-black text-[10px] text-white/80">
-                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+    <!-- Modal Evento -->
+    <div id="modal-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-6">
+        <div id="event-modal" class="bg-[#121212] w-full max-w-xs rounded-[30px] p-6 border border-white/5 shadow-2xl">
+            <h2 id="modal-title" class="text-lg font-bold mb-5 flex items-center gap-2">
+                <i class="ph-fill ph-calendar-plus text-orange-500"></i> Agendar
+            </h2>
+            <div class="space-y-4">
+                <input type="text" id="ev-title" placeholder="Título do evento" class="w-full bg-transparent border-b border-orange-500/30 py-2 text-sm focus:outline-none focus:border-orange-500">
+                <div class="flex gap-3">
+                    <input type="date" id="ev-date" class="flex-1 bg-white/5 p-2 rounded-xl text-[11px]" style="color-scheme: dark;">
+                    <input type="time" id="ev-time" class="w-24 bg-white/5 p-2 rounded-xl text-[11px]" style="color-scheme: dark;">
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="text-[10px] text-white/40">Cor:</div>
+                    <div class="flex gap-2" id="color-picker">
+                        <div class="w-4 h-4 rounded-full cursor-pointer border-2 border-white/20 active:scale-125 transition-transform" style="background: #FF6A00" onclick="selCol('#FF6A00')"></div>
+                        <div class="w-4 h-4 rounded-full cursor-pointer border-2 border-transparent" style="background: #3B82F6" onclick="selCol('#3B82F6')"></div>
+                        <div class="w-4 h-4 rounded-full cursor-pointer border-2 border-transparent" style="background: #A855F7" onclick="selCol('#A855F7')"></div>
                     </div>
                 </div>
-            );
-        };
-
-        function BossLevel({ onFinish }) {
-            // Gera um set de perguntas aleatórias do pool
-            const questions = useMemo(() => shuffleArray(BOSS_POOL).slice(0, 4), []);
-            const [step, setStep] = useState(0);
-            const [input, setInput] = useState("");
-            const [feedback, setFeedback] = useState(null);
-
-            const handleCheck = () => {
-                if (isCloseEnough(input, questions[step].a)) {
-                    playSound('success');
-                    setFeedback("correct");
-                    confetti({ particleCount: 20, spread: 40, origin: { y: 0.7 }, colors: ['#10b981'] });
-                    setTimeout(() => {
-                        if (step < questions.length - 1) {
-                            setStep(s => s + 1);
-                            setInput("");
-                            setFeedback(null);
-                        } else { onFinish(); }
-                    }, 800);
-                } else {
-                    setFeedback("wrong");
-                    setTimeout(() => setFeedback(null), 1000);
-                }
-            };
-
-            return (
-                <div className="flex flex-col items-center justify-center h-full gap-6">
-                    <div className="text-center">
-                        <p className="text-[10px] uppercase font-black opacity-30 mb-2 tracking-widest">Desafio Final {step + 1}/4</p>
-                        <h3 className="text-2xl font-black text-red-50">{questions[step].q}</h3>
-                    </div>
-                    <input 
-                        value={input} autoFocus
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-                        className={`w-full p-5 rounded-2xl bg-black/50 border-2 transition-all text-center text-xl font-bold ${feedback === 'correct' ? 'border-emerald-500 shadow-lg shadow-emerald-500/20' : feedback === 'wrong' ? 'border-red-600 animate-shake' : 'border-white/10 focus:border-white/30'}`}
-                    />
-                    <button onClick={handleCheck} className="w-full py-4 bg-red-600 text-white font-black rounded-xl uppercase tracking-widest active:scale-95 transition-all shadow-xl">Atacar</button>
+            </div>
+            <div class="mt-8 flex justify-between gap-3">
+                <button id="ev-del" onclick="deleteEv()" class="text-red-500 text-[11px] font-bold hidden">Excluir</button>
+                <div class="flex gap-3 ml-auto">
+                    <button onclick="closeModal()" class="text-white/30 text-[11px]">Fechar</button>
+                    <button onclick="saveEv()" class="orange-glass px-5 py-2 rounded-xl text-[11px] font-bold">Salvar</button>
                 </div>
-            );
+            </div>
+        </div>
+    </div>
+
+    <!-- Undo Toast -->
+    <div id="toast" class="toast orange-glass">
+        <span id="t-msg" class="font-medium">Removido</span>
+        <button onclick="undo()" class="text-white font-black border-l border-white/20 pl-3">Desfazer</button>
+    </div>
+
+    <script>
+        let curr = new Date();
+        let view = 'month';
+        let evs = JSON.parse(localStorage.getItem('evs_v3')) || [];
+        let hist = [];
+        let selColor = '#FF6A00';
+
+        const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        const days = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+        function render() {
+            const container = document.getElementById('content');
+            container.innerHTML = '';
+            document.getElementById('month-display').innerText = `${months[curr.getMonth()]} ${curr.getFullYear()}`;
+            
+            // Toggle Visual
+            ['month', 'agenda'].forEach(v => {
+                const btn = document.getElementById(`v-${v}`);
+                btn.className = (view === v) ? "px-3 py-1 rounded-lg text-[10px] bg-orange-500/20 text-orange-500 font-bold" : "px-3 py-1 rounded-lg text-[10px] text-white/40";
+            });
+
+            if (view === 'month') renderMonth(container);
+            else renderAgenda(container);
         }
 
-        function App() {
-            const [started, setStarted] = useState(false);
-            const [studyFlow, setStudyFlow] = useState(RAW_FLOW_DATA);
-            const [currentIndex, setCurrentIndex] = useState(0);
-            const [timeLeft, setTimeLeft] = useState(0);
-            const [isPaused, setIsPaused] = useState(false);
-            const [finished, setFinished] = useState(false);
-            const [playingIndex, setPlayingIndex] = useState(null);
-
-            // Embaralha o conteúdo quando o app inicia ou reinicia
-            const initializeFlow = () => {
-                const shuffled = RAW_FLOW_DATA.map(step => {
-                    if (Array.isArray(step.content)) {
-                        return { ...step, content: shuffleArray(step.content) };
-                    }
-                    return step;
-                });
-                setStudyFlow(shuffled);
-                setTimeLeft(shuffled[0].time);
-                setCurrentIndex(0);
-                setStarted(true);
-                playSound('success');
-            };
-
-            const triggerSubtleStars = () => {
-                confetti({
-                    particleCount: 15,
-                    spread: 45,
-                    origin: { y: 0.65 },
-                    shapes: ['star'],
-                    gravity: 1.5,
-                    scalar: 0.7,
-                    colors: ['#ffffff', '#fcd34d']
-                });
-            };
-
-            const nextCard = useCallback(() => {
-                playSound('click');
-                if (currentIndex < studyFlow.length - 1) {
-                    triggerSubtleStars();
-                    const nextIdx = currentIndex + 1;
-                    setCurrentIndex(nextIdx);
-                    setTimeLeft(studyFlow[nextIdx].time);
-                } else { 
-                    setFinished(true); 
-                    playSound('ta-da');
-                    confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
-                }
-            }, [currentIndex, studyFlow]);
-
-            useEffect(() => {
-                if (!started || isPaused || finished || studyFlow[currentIndex].type === 'quiz') return;
-                const timer = setInterval(() => {
-                    setTimeLeft(prev => {
-                        if (prev <= 1) { nextCard(); return 0; }
-                        return prev - 1;
-                    });
-                }, 1000);
-                return () => clearInterval(timer);
-            }, [started, isPaused, finished, nextCard, currentIndex, studyFlow]);
-
-            const speak = (text, index) => {
-                playSound('click');
-                if (!window.speechSynthesis) return;
-                window.speechSynthesis.cancel();
-                if (playingIndex === index) { setPlayingIndex(null); return; }
-                setPlayingIndex(index);
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'de-DE';
-                utterance.rate = 0.9;
-                utterance.onend = () => setPlayingIndex(null);
-                window.speechSynthesis.speak(utterance);
-            };
-
-            if (!started) return (
-                <div className="min-h-screen flex items-center justify-center p-6 text-white">
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-                        <motion.div 
-                            animate={{ y: [0, -10, 0] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className="w-20 h-20 bg-purple-500/10 border border-purple-400/20 rounded-[2rem] flex items-center justify-center mx-auto mb-10 shadow-2xl backdrop-blur-xl"
-                        >
-                            <Icon name="Gamepad2" className="w-10 h-10 text-purple-400" />
-                        </motion.div>
-                        <h1 className="text-6xl font-[900] tracking-tighter mb-4 leading-none">DEUTSCH<br/><span className="text-purple-400">FLOW</span></h1>
-                        <p className="text-purple-200/40 mb-12 text-sm font-medium tracking-wide">Ordem aleatória + Chefão dinâmico.</p>
-                        <motion.button 
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            onClick={initializeFlow} 
-                            className="w-full py-5 bg-purple-600 text-white font-black text-xl rounded-2xl shadow-xl shadow-purple-600/20 uppercase tracking-widest"
-                        >
-                            INICIAR FLUXO
-                        </motion.button>
-                    </motion.div>
-                </div>
-            );
-
-            if (finished) return (
-                <div className="min-h-screen flex flex-col items-center justify-center text-white bg-black/40">
-                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-                        <Icon name="Trophy" className="w-20 h-20 text-yellow-400 mx-auto mb-6" />
-                        <h1 className="text-5xl font-black mb-4 tracking-tighter">VITORIOSO!</h1>
-                        <p className="opacity-40 mb-12 max-w-xs mx-auto">Venceste os verbos e o Chefão aleatório.</p>
-                        <button onClick={() => setStarted(false)} className="px-12 py-5 bg-white text-black font-black rounded-2xl shadow-2xl active:scale-95 transition-all">NOVA RODADA</button>
-                    </motion.div>
-                </div>
-            );
-
-            return (
-                <div className="min-h-screen text-white p-4 flex flex-col items-center justify-center">
-                    <div className="w-full max-w-md flex justify-between items-center mb-12 z-50 px-2">
-                        <div className="bg-white/5 py-2 px-4 rounded-xl border border-white/10 text-[10px] font-black tracking-widest uppercase flex items-center gap-3">
-                           <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(167,139,250,0.8)]"></div>
-                           {currentIndex + 1} / {studyFlow.length}
-                        </div>
-                        <motion.button 
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => { setIsPaused(!isPaused); playSound('click'); }} 
-                            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${isPaused ? 'bg-purple-600 shadow-lg shadow-purple-600/30' : 'bg-white/5 border border-white/10'}`}
-                        >
-                            <Icon name={isPaused ? "Play" : "Pause"} />
-                        </motion.button>
+        function renderMonth(c) {
+            const first = new Date(curr.getFullYear(), curr.getMonth(), 1).getDay();
+            const last = new Date(curr.getFullYear(), curr.getMonth() + 1, 0).getDate();
+            
+            let grid = `<div class="calendar-grid fade-slide-in">`;
+            days.forEach(d => grid += `<div class="text-center py-2 text-[8px] font-black text-white/20">${d}</div>`);
+            
+            for(let i=0; i<first; i++) grid += `<div class="calendar-cell opacity-20"></div>`;
+            
+            for(let d=1; d<=last; d++) {
+                const dateStr = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isTday = new Date().toDateString() === new Date(curr.getFullYear(), curr.getMonth(), d).toDateString();
+                const dEvs = evs.filter(e => e.date === dateStr);
+                
+                grid += `
+                <div class="calendar-cell border-b border-r border-white/[0.02]" onpointerdown="createRipple(event)" onclick="openWithDate('${dateStr}')">
+                    <div class="flex justify-end">
+                        <span class="${isTday ? 'today-indicator' : 'text-white/40 text-[10px] font-medium'}">${d}</span>
                     </div>
-
-                    <div className="relative w-full max-w-[400px] h-[580px] perspective-1000">
-                        <AnimatePresence mode="popLayout">
-                            {studyFlow.slice(currentIndex).map((card, idx) => {
-                                const isTop = idx === 0;
-                                if (idx > 1) return null;
-                                return (
-                                    <motion.div
-                                        key={card.id}
-                                        initial={{ opacity: 0, scale: 0.95, y: 40 }}
-                                        animate={{ 
-                                            opacity: 1, 
-                                            scale: 1 - idx * 0.04, 
-                                            y: idx * -25, 
-                                            rotate: isTop ? 0 : 2,
-                                            zIndex: 50 - idx,
-                                        }}
-                                        exit={{ opacity: 0, x: -500, rotate: -20, transition: { duration: 0.5, ease: "anticipate" } }}
-                                        className={`absolute inset-0 rounded-[3.5rem] p-10 bg-gradient-to-br ${card.color} border border-white/5 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col`}
-                                    >
-                                        <div className="card-glow"></div>
-                                        
-                                        <div className="flex justify-between items-start mb-10">
-                                            <div className="w-14 h-14 bg-black/20 rounded-2xl flex items-center justify-center shadow-inner border border-white/5">
-                                                <Icon name={card.icon} className="!w-6 !h-6" />
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mb-1">{card.title}</p>
-                                                <h2 className="text-2xl font-black tracking-tight">{card.subtitle}</h2>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex-grow flex flex-col justify-center gap-4 overflow-y-auto scrollbar-hide">
-                                            {card.type === 'quiz' ? (
-                                                <BossLevel onFinish={nextCard} />
-                                            ) : Array.isArray(card.content) ? card.content.map((item, i) => (
-                                                <motion.div 
-                                                    key={i} 
-                                                    whileTap={{ scale: 0.97 }}
-                                                    onClick={() => speak(item.de || item.pt, i)} 
-                                                    className={`p-5 rounded-[2rem] border transition-all cursor-pointer flex justify-between items-center ${playingIndex === i ? 'bg-white text-slate-900 shadow-2xl' : 'bg-black/20 border-white/5 hover:bg-black/30'}`}
-                                                >
-                                                    <div>
-                                                        <p className="font-black text-lg leading-none mb-1.5">{item.de || item.pt}</p>
-                                                        <p className="text-xs opacity-50 font-bold">{item.de ? item.pt : item.de}</p>
-                                                    </div>
-                                                    <Icon name={playingIndex === i ? "Volume2" : "PlayCircle"} className={playingIndex === i ? "" : "opacity-10"} />
-                                                </motion.div>
-                                            )) : (
-                                                <div className="text-center p-8 bg-black/20 rounded-[2.5rem] border border-white/5">
-                                                    <p className="font-bold text-lg leading-relaxed opacity-70">{card.content}</p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {card.type !== 'quiz' && (
-                                            <div className="mt-10 flex flex-col items-center">
-                                                <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20 mb-8">{card.instruction}</p>
-                                                <div className="flex items-center justify-between w-full">
-                                                    <div className="w-14"></div>
-                                                    <div className="bg-black/30 rounded-full p-1 border border-white/5 shadow-inner">
-                                                        <CircularTimer timeLeft={timeLeft} totalTime={card.time} />
-                                                    </div>
-                                                    <motion.button 
-                                                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                                        onClick={nextCard} 
-                                                        className="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center shadow-xl transition-all"
-                                                    >
-                                                        <Icon name="ChevronRight" className="!w-6 !h-6" />
-                                                    </motion.button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
+                    <div class="mt-1 space-y-0.5 overflow-hidden">
+                        ${dEvs.slice(0,2).map(e => `<div class="event-pill" style="border-left-color:${e.color}">${e.title}</div>`).join('')}
+                        ${dEvs.length > 2 ? `<div class="text-[7px] text-white/20 pl-1">+${dEvs.length-2}</div>` : ''}
                     </div>
-                </div>
-            );
+                </div>`;
+            }
+            c.innerHTML = grid + `</div>`;
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function renderAgenda(c) {
+            const sorted = [...evs].sort((a,b) => a.date.localeCompare(b.date));
+            let html = `<div class="p-4 space-y-3">`;
+            if(sorted.length === 0) html += `<div class="text-center py-20 text-white/10 italic">Nenhum evento...</div>`;
+            
+            sorted.forEach((e, i) => {
+                html += `
+                <div class="agenda-item pop-in bg-white/5 p-3 rounded-2xl flex items-center gap-4 border border-white/5" 
+                     style="animation-delay: ${i * 40}ms" onclick="editEv('${e.id}')">
+                    <div class="w-1 h-8 rounded-full" style="background:${e.color}"></div>
+                    <div class="flex-1">
+                        <div class="text-[11px] font-bold">${e.title}</div>
+                        <div class="text-[9px] text-white/30">${e.date} • ${e.time}</div>
+                    </div>
+                    <i class="ph ph-caret-right text-white/10"></i>
+                </div>`;
+            });
+            c.innerHTML = html + `</div>`;
+            // Trigger opacity/transform manual para Stagger
+            setTimeout(() => {
+                document.querySelectorAll('.agenda-item').forEach(el => el.style.opacity = 1);
+            }, 50);
+        }
+
+        // --- CORE LOGIC ---
+
+        function navigate(dir) {
+            const h = document.getElementById('header-nav');
+            h.classList.add('header-bounce');
+            setTimeout(() => h.classList.remove('header-bounce'), 300);
+            curr.setMonth(curr.getMonth() + dir);
+            render();
+        }
+
+        function goToToday() { curr = new Date(); render(); }
+        function setView(v) { view = v; render(); }
+
+        function openModal() {
+            document.getElementById('modal-overlay').classList.add('active');
+            document.getElementById('ev-title').focus();
+        }
+
+        function openWithDate(d) {
+            document.getElementById('ev-date').value = d;
+            openModal();
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+            document.getElementById('ev-id-hidden')?.remove();
+            document.getElementById('ev-title').value = '';
+            document.getElementById('ev-del').classList.add('hidden');
+            document.getElementById('modal-title').innerHTML = `<i class="ph-fill ph-calendar-plus text-orange-500"></i> Agendar`;
+        }
+
+        function selCol(c) {
+            selColor = c;
+            document.querySelectorAll('#color-picker div').forEach(d => {
+                d.style.borderColor = (d.style.backgroundColor === hexToRgb(c)) ? 'white' : 'transparent';
+            });
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function saveEv() {
+            const title = document.getElementById('ev-title').value || "Sem título";
+            const date = document.getElementById('ev-date').value;
+            const time = document.getElementById('ev-time').value || "10:00";
+            const id = document.getElementById('ev-id-val')?.value || Date.now().toString();
+
+            if(!date) return alert("Escolha uma data!");
+
+            saveHist();
+            const existing = evs.findIndex(x => x.id === id);
+            const data = { id, title, date, time, color: selColor };
+
+            if(existing > -1) evs[existing] = data;
+            else evs.push(data);
+
+            sync();
+            closeModal();
+            render();
+            showToast(existing > -1 ? "Atualizado" : "Criado");
+        }
+
+        function editEv(id) {
+            const e = evs.find(x => x.id === id);
+            openModal();
+            document.getElementById('modal-title').innerText = "Editar Evento";
+            document.getElementById('ev-title').value = e.title;
+            document.getElementById('ev-date').value = e.date;
+            document.getElementById('ev-time').value = e.time;
+            selCol(e.color);
+            
+            const h = document.createElement('input');
+            h.type = 'hidden'; h.id = 'ev-id-val'; h.value = e.id;
+            document.getElementById('event-modal').appendChild(h);
+            document.getElementById('ev-del').classList.remove('hidden');
+        }
+
+        function deleteEv() {
+            const id = document.getElementById('ev-id-val').value;
+            saveHist();
+            evs = evs.filter(x => x.id !== id);
+            sync();
+            closeModal();
+            render();
+            showToast("Removido");
+        }
+
+        document.getElementById('quick-input').onkeypress = (e) => {
+            if(e.key === 'Enter' && e.target.value) {
+                saveHist();
+                evs.push({
+                    id: Date.now().toString(),
+                    title: e.target.value,
+                    date: curr.toISOString().split('T')[0],
+                    time: "12:00",
+                    color: "#FF6A00"
+                });
+                sync();
+                e.target.value = '';
+                render();
+                showToast("Adicionado");
+            }
+        };
+
+        function createRipple(e) {
+            const cell = e.currentTarget;
+            const circle = document.createElement("span");
+            const diameter = Math.max(cell.clientWidth, cell.clientHeight);
+            const radius = diameter / 2;
+            
+            const rect = cell.getBoundingClientRect();
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${e.clientX - rect.left - radius}px`;
+            circle.style.top = `${e.clientY - rect.top - radius}px`;
+            circle.classList.add("ripple");
+            
+            const ripple = cell.getElementsByClassName("ripple")[0];
+            if (ripple) ripple.remove();
+            cell.appendChild(circle);
+        }
+
+        function saveHist() { hist.push(JSON.stringify(evs)); }
+        function undo() {
+            if(hist.length) {
+                evs = JSON.parse(hist.pop());
+                sync();
+                render();
+                document.getElementById('toast').classList.remove('show');
+            }
+        }
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            document.getElementById('t-msg').innerText = m;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        function sync() { localStorage.setItem('evs_v3', JSON.stringify(evs)); }
+
+        render();
     </script>
 </body>
 </html>
+
